@@ -4,7 +4,7 @@
 #include "common.h"
 
 #include <functional>
-#include <map>
+#include <unordered_map>
 
 class Sheet : public SheetInterface {
 public:
@@ -32,6 +32,8 @@ private:
                     const std::function<void(const CellInterface&)>& printCell) const;
     Size GetActualSize() const;
 
-    std::map<Position, std::unique_ptr<Cell>> cells_;
+    std::unordered_map<Position, std::unique_ptr<Cell>, Position::HashFunc> cells_;
+    std::vector<int> row_count = std::vector<int>(Position::MAX_ROWS, 0);
+    std::vector<int> col_count = std::vector<int>(Position::MAX_COLS, 0);
     Size size_;
 };

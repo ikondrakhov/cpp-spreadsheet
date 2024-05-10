@@ -44,7 +44,6 @@ void Sheet::SetCell(Position pos, std::string text) {
         }
     }
     
-    //create new cell and replace with old
     std::unique_ptr<Cell> cell = std::make_unique<Cell>(text, *this);
     std::unique_ptr<Cell> tmp_cell = std::move(cells_[pos]);
     cells_[pos] = std::move(cell);
@@ -55,7 +54,6 @@ void Sheet::SetCell(Position pos, std::string text) {
         cells_[referenced_cell_pos]->AddReferedCell(pos);
     }
     
-    //if contains cyclic dependencies return old value
     try {
         CheckCyclicDependencies(pos);
     } catch (CircularDependencyException& e) {
@@ -63,6 +61,8 @@ void Sheet::SetCell(Position pos, std::string text) {
         throw e;
     }
     
+    col_count[pos.col]++;
+    row_count[pos.row]++;
     if(pos.col >= size_.cols) {
         size_.cols = pos.col + 1;
     }
@@ -98,10 +98,22 @@ void Sheet::ClearCell(Position pos) {
         throw InvalidPositionException("Invalid position");
     }
     cells_.erase(pos);
-    if(cells_.size() == 0) {
-        size_ = {0, 0};
-    } else {
-        size_ = {cells_.rbegin()->first.row + 1, cells_.rbegin()->first.col + 1};
+    
+    row_count[pos.row]--;
+    col_count[pos.col]--;
+    if(row_count[pos.row] == 0 && pos.row == (size_.rows - 1)) {
+        int new_row_size = pos.row;
+        while(new_row_size >= 0 && row_count[new_row_size] == 0) {
+            new_row_size--;
+        }
+        size_.rows = new_row_size + 1;
+    }
+    if(col_count[pos.col] == 0 && pos.col == (size_.cols - 1)) {
+        int new_col_size = pos.col;
+        while(new_col_size >= 0 && col_count[new_col_size] == 0) {
+            new_col_size--;
+        }
+        size_.cols = new_col_size + 1;
     }
 }
 

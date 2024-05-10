@@ -144,19 +144,21 @@ public:
 
     double Evaluate(std::function<const CellInterface*(const Position&)> pos_mapper) const override {
         double result = 0;
+        double left = lhs_->Evaluate(pos_mapper);
+        double right = rhs_->Evaluate(pos_mapper);
         switch (type_) {
             case Add:
-                result = lhs_->Evaluate(pos_mapper) + rhs_->Evaluate(pos_mapper);
+                result = left + right;
                 break;
             case Subtract:
-                result = lhs_->Evaluate(pos_mapper) - rhs_->Evaluate(pos_mapper);
+                result = left - right;
                 break;
             case Multiply:
-                result = lhs_->Evaluate(pos_mapper) * rhs_->Evaluate(pos_mapper);
+                result = left * right;
                 break;
             case Divide:
-                result = lhs_->Evaluate(pos_mapper) / rhs_->Evaluate(pos_mapper);
-                if(rhs_->Evaluate(pos_mapper) == 0) {
+                result = left / right;
+                if(std::abs(right) < 1e-20) {
                     throw FormulaError(FormulaError::Category::Arithmetic);
                 }
                 break;;
@@ -207,11 +209,12 @@ public:
     }
 
     double Evaluate(std::function<const CellInterface*(const Position&)> pos_mapper) const override {
+        double value = operand_->Evaluate(pos_mapper);
         switch(type_) {
             case UnaryPlus:
-                return operand_->Evaluate(pos_mapper);
+                return value;
             case UnaryMinus:
-                return -1 * operand_->Evaluate(pos_mapper);
+                return -1 * value;
             default:
                 assert(false);
                 return static_cast<ExprPrecedence>(INT_MAX);

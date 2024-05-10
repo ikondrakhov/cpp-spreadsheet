@@ -73,6 +73,12 @@ Position Position::FromString(std::string_view str) {
     return {row - 1, col - 1};
 }
 
+size_t Position::HashFunc::operator()(const Position& pos) const {
+    size_t rowHash = std::hash<int>()(pos.row);
+    size_t colHash = std::hash<int>()(pos.col) << 1;
+    return rowHash ^ colHash;
+}
+
 bool Size::operator==(Size rhs) const {
     return cols == rhs.cols && rows == rhs.rows;
 }

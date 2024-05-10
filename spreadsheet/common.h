@@ -24,6 +24,10 @@ struct Position {
     static const int MAX_ROWS = 16384;
     static const int MAX_COLS = 16384;
     static const Position NONE;
+    
+    struct HashFunc {
+        size_t operator()(const Position& p) const;
+    };
 };
 
 struct Size {
