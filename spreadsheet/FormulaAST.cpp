@@ -72,7 +72,7 @@ public:
     virtual ~Expr() = default;
     virtual void Print(std::ostream& out) const = 0;
     virtual void DoPrintFormula(std::ostream& out, ExprPrecedence precedence) const = 0;
-    virtual double Evaluate(/*добавьте сюда нужные аргументы*/ args) const = 0;
+    virtual double Evaluate(std::function<const CellInterface*(const Position&)> pos_mapper) const = 0;
 
     // higher is tighter
     virtual ExprPrecedence GetPrecedence() const = 0;
@@ -142,8 +142,34 @@ public:
         }
     }
 
-    double Evaluate(/*добавьте нужные аргументы*/) const override {
-			// Скопируйте ваше решение из предыдущих уроков.
+    double Evaluate(std::function<const CellInterface*(const Position&)> pos_mapper) const override {
+        double result = 0;
+        switch (type_) {
+            case Add:
+                result = lhs_->Evaluate(pos_mapper) + rhs_->Evaluate(pos_mapper);
+                break;
+            case Subtract:
+                result = lhs_->Evaluate(pos_mapper) - rhs_->Evaluate(pos_mapper);
+                break;
+            case Multiply:
+                result = lhs_->Evaluate(pos_mapper) * rhs_->Evaluate(pos_mapper);
+                break;
+            case Divide:
+                result = lhs_->Evaluate(pos_mapper) / rhs_->Evaluate(pos_mapper);
+                if(rhs_->Evaluate(pos_mapper) == 0) {
+                    throw FormulaError(FormulaError::Category::Arithmetic);
+                }
+                break;;
+            default:
+                // have to do this because VC++ has a buggy warning
+                assert(false);
+                return static_cast<ExprPrecedence>(INT_MAX);
+        }
+        
+        if(std::isinf(result)) {
+            throw FormulaError(FormulaError::Category::Arithmetic);
+        }
+        return result;
     }
 
 private:
@@ -180,8 +206,16 @@ public:
         return EP_UNARY;
     }
 
-    double Evaluate(/*добавьте нужные аргументы*/ args) const override {
-        // Скопируйте ваше решение из предыдущих уроков.
+    double Evaluate(std::function<const CellInterface*(const Position&)> pos_mapper) const override {
+        switch(type_) {
+            case UnaryPlus:
+                return operand_->Evaluate(pos_mapper);
+            case UnaryMinus:
+                return -1 * operand_->Evaluate(pos_mapper);
+            default:
+                assert(false);
+                return static_cast<ExprPrecedence>(INT_MAX);
+        }
     }
 
 private:
@@ -211,8 +245,33 @@ public:
         return EP_ATOM;
     }
 
-    double Evaluate(/*добавьте нужные аргументы*/ args) const override {
-        // реализуйте метод.
+    double Evaluate(std::function<const CellInterface*(const Position&)> pos_mapper) const override {
+        auto cell = pos_mapper(*cell_);
+        if(cell == nullptr) {
+            return 0;
+        }
+        auto value = cell->GetValue();
+        if(std::holds_alternative<std::string>(value)) {
+            if(std::get<std::string>(value).size() == 0) {
+                return 0;
+            }
+            size_t converted = 0;
+            double v = 0;
+            try {
+                v = std::stod(std::get<std::string>(value), &converted);
+            } catch (const std::invalid_argument&) {
+                throw FormulaError(FormulaError::Category::Value);
+            }
+            if(converted == std::get<std::string>(value).size()) {
+                return v;
+            } else {
+                throw FormulaError(FormulaError::Category::Value);
+            }
+        } else if (std::holds_alternative<double>(value)) {
+            return std::get<double>(value);
+        } else {
+            throw std::get<FormulaError>(value);
+        }
     }
 
 private:
@@ -237,7 +296,7 @@ public:
         return EP_ATOM;
     }
 
-    double Evaluate(/*добавьте нужные аргументы*/ args) const override {
+    double Evaluate(std::function<const CellInterface*(const Position&)> pos_mapper) const override {
         return value_;
     }
 
@@ -391,8 +450,8 @@ void FormulaAST::PrintFormula(std::ostream& out) const {
     root_expr_->PrintFormula(out, ASTImpl::EP_ATOM);
 }
 
-double FormulaAST::Execute(/*добавьте нужные аргументы*/ args) const {
-    return root_expr_->Evaluate(/*добавьте нужные аргументы*/ args);
+double FormulaAST::Execute(std::function<const CellInterface*(const Position&)> pos_mapper) const {
+    return root_expr_->Evaluate(pos_mapper);
 }
 
 FormulaAST::FormulaAST(std::unique_ptr<ASTImpl::Expr> root_expr, std::forward_list<Position> cells)
