@@ -33,7 +33,5 @@ private:
     Size GetActualSize() const;
 
     std::unordered_map<Position, std::unique_ptr<Cell>, Position::HashFunc> cells_;
-    std::vector<int> row_count = std::vector<int>(Position::MAX_ROWS, 0);
-    std::vector<int> col_count = std::vector<int>(Position::MAX_COLS, 0);
     Size size_;
 };

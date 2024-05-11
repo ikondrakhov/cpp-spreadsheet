@@ -61,8 +61,6 @@ void Sheet::SetCell(Position pos, std::string text) {
         throw e;
     }
     
-    col_count[pos.col]++;
-    row_count[pos.row]++;
     if(pos.col >= size_.cols) {
         size_.cols = pos.col + 1;
     }
@@ -99,21 +97,17 @@ void Sheet::ClearCell(Position pos) {
     }
     cells_.erase(pos);
     
-    row_count[pos.row]--;
-    col_count[pos.col]--;
-    if(row_count[pos.row] == 0 && pos.row == (size_.rows - 1)) {
-        int new_row_size = pos.row;
-        while(new_row_size >= 0 && row_count[new_row_size] == 0) {
-            new_row_size--;
+    if((pos.row + 1) == size_.rows || (pos.col + 1) == size_.cols) {
+        Size new_size = {0, 0};
+        for(const auto& [pos, _]: cells_) {
+            if(pos.row >= new_size.rows) {
+                new_size.rows = pos.row + 1;
+            }
+            if(pos.col >= new_size.cols) {
+                new_size.cols = pos.col + 1;
+            }
         }
-        size_.rows = new_row_size + 1;
-    }
-    if(col_count[pos.col] == 0 && pos.col == (size_.cols - 1)) {
-        int new_col_size = pos.col;
-        while(new_col_size >= 0 && col_count[new_col_size] == 0) {
-            new_col_size--;
-        }
-        size_.cols = new_col_size + 1;
+        size_ = new_size;
     }
 }
 
