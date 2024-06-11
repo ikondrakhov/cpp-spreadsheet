@@ -158,7 +158,7 @@ public:
                 break;
             case Divide:
                 result = left / right;
-                if(std::abs(right) < THREASHOLD) {
+                if(std::abs(right) < THRESHOLD) {
                     throw FormulaError(FormulaError::Category::Arithmetic);
                 }
                 break;;

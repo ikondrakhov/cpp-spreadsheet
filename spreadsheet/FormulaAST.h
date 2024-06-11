@@ -7,7 +7,7 @@
 #include <functional>
 #include <stdexcept>
 
-#define THREASHOLD 1e-20
+#define THRESHOLD 1e-20
 
 namespace ASTImpl {
 class Expr;
